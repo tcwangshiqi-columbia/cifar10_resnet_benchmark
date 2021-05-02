@@ -3,10 +3,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
 
-class Flatten(nn.Module):
-    def forward(self, x):
-        return x.view(x.size(0), -1)
-
 class BasicBlock(nn.Module):
     expansion = 1
 
@@ -71,9 +67,9 @@ class BasicBlock(nn.Module):
 
 
 
-class CResNet5(nn.Module):
+class ResNet5(nn.Module):
     def __init__(self, block, num_blocks=2, num_classes=10, in_planes=64, bn=True, last_layer="avg"):
-        super(CResNet5, self).__init__()
+        super(ResNet5, self).__init__()
         self.in_planes = in_planes
         self.bn = bn
         self.last_layer = last_layer
@@ -123,9 +119,9 @@ class CResNet5(nn.Module):
         return out
 
 
-class CResNet7(nn.Module):
+class ResNet9(nn.Module):
     def __init__(self, block, num_blocks=2, num_classes=10, in_planes=64, bn=True, last_layer="avg"):
-        super(CResNet7, self).__init__()
+        super(ResNet9, self).__init__()
         self.in_planes = in_planes
         self.bn = bn
         self.last_layer = last_layer
@@ -178,74 +174,13 @@ class CResNet7(nn.Module):
         return out
 
 
+def resnet2b():
+    return ResNet5(BasicBlock, num_blocks=2, in_planes=8, bn=False, last_layer="dense")
 
-def cresnet5_16_dense_bn():
-    return CResNet5(BasicBlock, num_blocks=2, in_planes=16, bn=True, last_layer="dense")
-
-def cresnet5_16_avg_bn():
-    return CResNet5(BasicBlock, num_blocks=2, in_planes=16, bn=True, last_layer="avg")
-
-
-def cresnet5_8_dense_bn():
-    return CResNet5(BasicBlock, num_blocks=2, in_planes=8, bn=True, last_layer="dense")
-
-def cresnet5_8_avg_bn():
-    return CResNet5(BasicBlock, num_blocks=2, in_planes=8, bn=True, last_layer="avg")
+def resnet4b():
+    return ResNet9(BasicBlock, num_blocks=2, in_planes=8, bn=False, last_layer="dense")
 
 
-def cresnet5_4_dense_bn():
-    return CResNet5(BasicBlock, num_blocks=2, in_planes=4, bn=True, last_layer="dense")
-
-def cresnet5_4_avg_bn():
-    return CResNet5(BasicBlock, num_blocks=2, in_planes=4, bn=True, last_layer="avg")
-
-
-def cresnet7_8_dense_bn():
-    return CResNet7(BasicBlock, num_blocks=2, in_planes=8, bn=True, last_layer="dense")
-
-def cresnet7_8_avg_bn():
-    return CResNet7(BasicBlock, num_blocks=2, in_planes=8, bn=True, last_layer="avg")
-
-
-def cresnet7_4_dense_bn():
-    return CResNet7(BasicBlock, num_blocks=2, in_planes=4, bn=True, last_layer="dense")
-
-def cresnet7_4_avg_bn():
-    return CResNet7(BasicBlock, num_blocks=2, in_planes=4, bn=True, last_layer="avg")
-
-
-
-
-def cresnet5_16_dense():
-    return CResNet5(BasicBlock, num_blocks=2, in_planes=16, bn=False, last_layer="dense")
-
-def cresnet5_16_avg():
-    return CResNet5(BasicBlock, num_blocks=2, in_planes=16, bn=False, last_layer="avg")
-
-
-def cresnet5_8_dense():
-    return CResNet5(BasicBlock, num_blocks=2, in_planes=8, bn=False, last_layer="dense")
-
-def cresnet5_8_avg():
-    return CResNet5(BasicBlock, num_blocks=2, in_planes=8, bn=False, last_layer="avg")
-
-
-def cresnet5_4_dense():
-    return CResNet5(BasicBlock, num_blocks=2, in_planes=4, bn=False, last_layer="dense")
-
-def cresnet5_4_avg():
-    return CResNet5(BasicBlock, num_blocks=2, in_planes=4, bn=False, last_layer="avg")
-
-
-def cresnet7_8_dense():
-    return CResNet7(BasicBlock, num_blocks=2, in_planes=8, bn=False, last_layer="dense")
-
-def cresnet7_8_avg():
-    return CResNet7(BasicBlock, num_blocks=2, in_planes=8, bn=False, last_layer="avg")
-
-
-def cresnet7_4_dense():
-    return CResNet7(BasicBlock, num_blocks=2, in_planes=4, bn=False, last_layer="dense")
-
-def cresnet7_4_avg():
-    return CResNet7(BasicBlock, num_blocks=2, in_planes=4, bn=False, last_layer="avg")
+if __name__ == '__main__':
+    
+    main()
