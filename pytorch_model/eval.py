@@ -73,8 +73,8 @@ def clean_acc(model_name, images, labels):
 def main():
     num_imgs = 10000
     images, labels = load_data(num_imgs=num_imgs, random=False)
-    print("ResNet-2B clean acc: {}% out of {}".format(clean_acc("resnet2b", images, labels), num_imgs))
-    print("ResNet-4B clean acc: {}% out of {}".format(clean_acc("resnet4b", images, labels), num_imgs))
+    print("ResNet-2B clean acc: {} out of {}".format(clean_acc("resnet2b", images, labels), num_imgs))
+    print("ResNet-4B clean acc: {} out of {}".format(clean_acc("resnet4b", images, labels), num_imgs))
     exit()
 
 if __name__ == "__main__":
