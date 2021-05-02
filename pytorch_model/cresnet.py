@@ -14,7 +14,6 @@ class BasicBlock(nn.Module):
         super(BasicBlock, self).__init__()
         self.bn = bn
         if kernel == 3:
-            # can only do planes 16, block1
             self.conv1 = nn.Conv2d(
                 in_planes, planes, kernel_size=3, stride=stride, padding=1, bias=(not self.bn))
             if self.bn:
@@ -22,7 +21,6 @@ class BasicBlock(nn.Module):
             self.conv2 = nn.Conv2d(planes, planes, kernel_size=3,
                                    stride=1, padding=1, bias=(not self.bn))
         elif kernel == 2:
-            # can do planes 32
             self.conv1 = nn.Conv2d(
                 in_planes, planes, kernel_size=2, stride=stride, padding=1, bias=(not self.bn))
             if self.bn:
@@ -30,7 +28,6 @@ class BasicBlock(nn.Module):
             self.conv2 = nn.Conv2d(planes, planes, kernel_size=2,
                                    stride=1, padding=0, bias=(not self.bn))
         elif kernel == 1:
-            # can only do planes 16, block1
             self.conv1 = nn.Conv2d(
                 in_planes, planes, kernel_size=1, stride=stride, padding=0, bias=(not self.bn))
             if self.bn:
@@ -58,18 +55,18 @@ class BasicBlock(nn.Module):
                 )
 
     def forward(self, x):
-        print("basic block")
+        # print("basic block")
         if self.bn:
             out = F.relu(self.bn1(self.conv1(x)))
-            print("residual relu:", out.shape, out[0].view(-1).shape)
+            # print("residual relu:", out.shape, out[0].view(-1).shape)
             out = self.bn2(self.conv2(out))
         else:
             out = F.relu(self.conv1(x))
-            print("residual relu:", out.shape, out[0].view(-1).shape)
+            # print("residual relu:", out.shape, out[0].view(-1).shape)
             out = self.conv2(out)
         out += self.shortcut(x)
         out = F.relu(out)
-        print("residual relu:", out.shape, out[0].view(-1).shape)
+        # print("residual relu:", out.shape, out[0].view(-1).shape)
         return out
 
 
@@ -106,23 +103,23 @@ class CResNet5(nn.Module):
             out = F.relu(self.bn1(self.conv1(x)))
         else:
             out = F.relu(self.conv1(x))
-        print("conv1 relu", out.shape, out[0].view(-1).shape)
+        # print("conv1 relu", out.shape, out[0].view(-1).shape)
         out = self.layer1(out)
-        print("layer1", out.shape)
+        # print("layer1", out.shape)
         if self.last_layer == "avg":
             out = self.avg2d(out)
-            print("avg", out.shape)
+            # print("avg", out.shape)
             out = out.view(out.size(0), -1)
-            print("view", out.shape)
+            # print("view", out.shape)
             out = self.linear(out)
-            print("output", out.shape)
+            # print("output", out.shape)
         elif self.last_layer == "dense":
             out = out.view(out.size(0), -1)
-            print("view", out.shape)
+            # print("view", out.shape)
             out = F.relu(self.linear1(out))
-            print("linear1 relu", out.shape, out[0].view(-1).shape)
+            # print("linear1 relu", out.shape, out[0].view(-1).shape)
             out = self.linear2(out)
-            print("output", out.shape)
+            # print("output", out.shape)
         return out
 
 
@@ -159,25 +156,25 @@ class CResNet7(nn.Module):
             out = F.relu(self.bn1(self.conv1(x)))
         else:
             out = F.relu(self.conv1(x))
-        print("conv1 relu", out.shape, out[0].view(-1).shape)
+        # print("conv1 relu", out.shape, out[0].view(-1).shape)
         out = self.layer1(out)
-        print("layer1", out.shape)
+        # print("layer1", out.shape)
         out = self.layer2(out)
-        print("layer2", out.shape)
+        # print("layer2", out.shape)
         if self.last_layer == "avg":
             out = self.avg2d(out)
-            print("avg", out.shape)
+            # print("avg", out.shape)
             out = out.view(out.size(0), -1)
-            print("view", out.shape)
+            # print("view", out.shape)
             out = self.linear(out)
-            print("output", out.shape)
+            # print("output", out.shape)
         elif self.last_layer == "dense":
             out = out.view(out.size(0), -1)
-            print("view", out.shape)
+            # print("view", out.shape)
             out = F.relu(self.linear1(out))
-            print("linear1 relu", out.shape, out[0].view(-1).shape)
+            # print("linear1 relu", out.shape, out[0].view(-1).shape)
             out = self.linear2(out)
-            print("output", out.shape)
+            # print("output", out.shape)
         return out
 
 
