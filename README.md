@@ -16,6 +16,10 @@ develop better tools.
 - ResNet-2B with 2 residual blocks: 5 convolutional layers + 2 linear layers
 - ResNet-4B with 4 residual blocks: 9 convolutional layers + 2 linear layers
 
+The ONNX format networks are available in the [onnx](onnx/) folder, and PyTorch models
+can be found in the [pytorch_model](pytorch_model) folder. Model definitions
+are available [here](pytorch_model/resnet.py).
+
 Since this is one of the first benchmarks using ResNet, we keep the networks
 relatively small (compared to ResNet 50 used in many vision tasks) so hopefully
 most tools can handle them: the two networks have only 2 and 4 residual blocks,
