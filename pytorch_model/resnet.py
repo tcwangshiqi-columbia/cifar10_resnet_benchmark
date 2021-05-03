@@ -51,18 +51,14 @@ class BasicBlock(nn.Module):
                 )
 
     def forward(self, x):
-        # print("basic block")
         if self.bn:
             out = F.relu(self.bn1(self.conv1(x)))
-            # print("residual relu:", out.shape, out[0].view(-1).shape)
             out = self.bn2(self.conv2(out))
         else:
             out = F.relu(self.conv1(x))
-            # print("residual relu:", out.shape, out[0].view(-1).shape)
             out = self.conv2(out)
         out += self.shortcut(x)
         out = F.relu(out)
-        # print("residual relu:", out.shape, out[0].view(-1).shape)
         return out
 
 
@@ -99,23 +95,15 @@ class ResNet5(nn.Module):
             out = F.relu(self.bn1(self.conv1(x)))
         else:
             out = F.relu(self.conv1(x))
-        # print("conv1 relu", out.shape, out[0].view(-1).shape)
         out = self.layer1(out)
-        # print("layer1", out.shape)
         if self.last_layer == "avg":
             out = self.avg2d(out)
-            # print("avg", out.shape)
             out = out.view(out.size(0), -1)
-            # print("view", out.shape)
             out = self.linear(out)
-            # print("output", out.shape)
         elif self.last_layer == "dense":
             out = out.view(out.size(0), -1)
-            # print("view", out.shape)
             out = F.relu(self.linear1(out))
-            # print("linear1 relu", out.shape, out[0].view(-1).shape)
             out = self.linear2(out)
-            # print("output", out.shape)
         return out
 
 
@@ -152,25 +140,16 @@ class ResNet9(nn.Module):
             out = F.relu(self.bn1(self.conv1(x)))
         else:
             out = F.relu(self.conv1(x))
-        # print("conv1 relu", out.shape, out[0].view(-1).shape)
         out = self.layer1(out)
-        # print("layer1", out.shape)
         out = self.layer2(out)
-        # print("layer2", out.shape)
         if self.last_layer == "avg":
             out = self.avg2d(out)
-            # print("avg", out.shape)
             out = out.view(out.size(0), -1)
-            # print("view", out.shape)
             out = self.linear(out)
-            # print("output", out.shape)
         elif self.last_layer == "dense":
             out = out.view(out.size(0), -1)
-            # print("view", out.shape)
             out = F.relu(self.linear1(out))
-            # print("linear1 relu", out.shape, out[0].view(-1).shape)
             out = self.linear2(out)
-            # print("output", out.shape)
         return out
 
 
@@ -182,5 +161,5 @@ def resnet4b():
 
 
 if __name__ == '__main__':
-    
-    main()
+    print('ResNet-2B:\n', resnet2b())
+    print('ResNet-4B:\n', resnet4b())
