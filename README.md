@@ -41,3 +41,17 @@ the timeouts less than 6 hours (as @stanleybak suggested), the suggested
 per-example timeout is 6 minutes (assuming only a fraction of all examples time
 out).
 
+
+**Generating properties**
+
+To generate the regular properties (100 random testing images, true label larger than all other labels), please run:
+```
+python generate_properties.py --num_images 100 --random True --epsilons '2/255'
+```
+
+We also provide script for generating properties against runnerup labels (100 random testing images that are classified correctly and are robust against targeted pgd attacks, true label larger than runnerup label) by running:
+```
+cd pytorch_model
+python generate_properties_pgd.py --model resnet2b --num_images 100 --random True --epsilons '2/255'
+python generate_properties_pgd.py --model resnet4b --num_images 100 --random True --epsilons '2/255'
+```
