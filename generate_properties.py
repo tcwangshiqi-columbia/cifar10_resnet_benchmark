@@ -140,6 +140,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--num_images', type=int, default=25)
     parser.add_argument('--random', type=bool, default=False)
+    parser.add_argument('--seed', type=int, default=None)
     parser.add_argument('--epsilons', type=str, default="8/255")
     args = parser.parse_args()
 
@@ -157,6 +158,10 @@ if __name__ == '__main__':
 
     if not os.path.isdir(result_dir):
         os.mkdir(result_dir)
+
+    if args.seed is not None:
+        # we use random seed 0 for deterministic testing
+        torch.random.manual_seed(args.seed)
 
     images, labels = load_data(num_imgs=num_imgs, random=random)
 
