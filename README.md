@@ -79,3 +79,9 @@ python generate_properties.py --num_images 100 --random True --epsilons '2/255'
 ```
 This setting is useful for computing a "verified accuracy" given a dataset.
 
+
+To create the instance csv file for properties:
+```bash
+python create_instance.py resnet_2b
+python create_instance.py resnet_4b
+```
