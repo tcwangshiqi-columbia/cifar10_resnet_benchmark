@@ -12305,13 +12305,13 @@
 
 ; Output constraints:
 (assert (or
-    (and (>= Y_4 Y_0))
-    (and (>= Y_4 Y_1))
-    (and (>= Y_4 Y_2))
-    (and (>= Y_4 Y_3))
-    (and (>= Y_4 Y_5))
-    (and (>= Y_4 Y_6))
-    (and (>= Y_4 Y_7))
-    (and (>= Y_4 Y_8))
-    (and (>= Y_4 Y_9))
+    (and (>= Y_0 Y_4))
+    (and (>= Y_1 Y_4))
+    (and (>= Y_2 Y_4))
+    (and (>= Y_3 Y_4))
+    (and (>= Y_5 Y_4))
+    (and (>= Y_6 Y_4))
+    (and (>= Y_7 Y_4))
+    (and (>= Y_8 Y_4))
+    (and (>= Y_9 Y_4))
 ))

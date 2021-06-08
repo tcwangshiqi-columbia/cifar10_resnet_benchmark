@@ -131,7 +131,7 @@ def save_vnnlib(input_bounds: torch.Tensor, label: int, spec_path: str, total_ou
         f.write("(assert (or\n")
         for i in range(total_output_class):
             if i != label:
-                f.write(f"    (and (>= Y_{label} Y_{i}))\n")
+                f.write(f"    (and (>= Y_{i} Y_{label}))\n")
         f.write("))\n")
 
 
