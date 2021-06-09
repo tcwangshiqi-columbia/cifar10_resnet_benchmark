@@ -178,8 +178,18 @@ def save_vnnlib(input_bounds: torch.Tensor, label: int, runnerup: int, spec_path
 
         # Define output constraints.
         f.write(f"; Output constraints:\n")
-        f.write(f"(assert (>= Y_{label} Y_{runnerup}))\n")
-        f.write("\n")
+        # orignal separate version:
+        # for i in range(total_output_class):
+        #     if i != label:
+        #         f.write(f"(assert (>= Y_{label} Y_{i}))\n")
+        # f.write("\n")
+
+        # disjunction version:
+        f.write("(assert (or\n")
+        for i in range(total_output_class):
+            if i != label:
+                f.write(f"    (and (>= Y_{i} Y_{label}))\n")
+        f.write("))\n")
 
 
 if __name__ == '__main__':
@@ -188,6 +198,7 @@ if __name__ == '__main__':
     parser.add_argument('--model', type=str, default="resnet2b", choices=["resnet2b", "resnet4b"])
     parser.add_argument('--num_images', type=int, default=25)
     parser.add_argument('--random', type=bool, default=False)
+    parser.add_argument('--seed', type=int, default=None)
     parser.add_argument('--epsilons', type=str, default="2/255")
     args = parser.parse_args()
 
@@ -198,7 +209,7 @@ if __name__ == '__main__':
         epsilons = [eval(eps) for eps in args.epsilons.split(" ")]
     except ValueError:
         msg = "Error, usage: $python generate_properties --num_images <int> --random <bool> --epsilons <str> \n"
-        msg += "Example: $python generate_properties --num_images 25 --random True --epsilons '0.03 0.05'"
+        msg += "Example: $python generate_properties_pgd.py --num_images 100 --random True --epsilons '2/255' --seed 0"
         raise ValueError(msg)
 
     result_dir = "../vnnlib_properties_pgd_filtered/"
@@ -217,6 +228,10 @@ if __name__ == '__main__':
     model.load_state_dict(torch.load(model_path)["state_dict"])
     model = model.cuda()
 
+    if args.random and args.seed is not None:
+        # we use random seed 0 for deterministic testing
+        torch.random.manual_seed(args.seed)
+
     images, labels = load_data(num_imgs=10000, random=random)
 
     for eps in epsilons:
@@ -230,19 +245,44 @@ if __name__ == '__main__':
             # adding pgd filter targeting for runner up label
             output = model(normalize(image.unsqueeze(0).cuda()))
             if output.max(1)[1] != label: 
+                print("incorrect image {}".format(i))
                 continue
             acc += 1
             # continue
             output[0, label] = -np.inf
-            runnerup = output.max(1)[1].item()
-            print("image {}/{} label {} runnerup {}".format(cnt, i, label, runnerup))
 
-            pgd_success = attack_pgd(model, X=image.unsqueeze(0), y=torch.tensor([label], device="cuda"),
-                                 epsilon=torch.tensor(eps, device="cuda"), upper_limit=torch.tensor(1., device="cuda"), 
-                                 lower_limit=torch.tensor(0., device="cuda"),
-                                 target=torch.tensor([runnerup], device="cuda"))
+            #########
+            # runnerup label targeted pgd
+            # runnerup = output.max(1)[1].item()
+            # print("image {}/{} label {} runnerup {}".format(cnt, i, label, runnerup))
+
+            # pgd_success = attack_pgd(model, X=image.unsqueeze(0), y=torch.tensor([label], device="cuda"),
+            #                      epsilon=torch.tensor(eps, device="cuda"), upper_limit=torch.tensor(1., device="cuda"), 
+            #                      lower_limit=torch.tensor(0., device="cuda"),
+            #                      target=torch.tensor([runnerup], device="cuda"))
+            # if pgd_success:
+            #     print("pgd succeed {}".format(i))
+            #     continue
+
+            #########
+            # All label targeted pgd
+            pgd_success = False
+            for runnerup in range(10):
+                if runnerup == label:
+                    continue
+                print("image {}/{} label {} runnerup {}".format(cnt, i, label, runnerup))
+
+                pgd_success = attack_pgd(model, X=image.unsqueeze(0), y=torch.tensor([label], device="cuda"),
+                                     epsilon=torch.tensor(eps, device="cuda"), upper_limit=torch.tensor(1., device="cuda"), 
+                                     lower_limit=torch.tensor(0., device="cuda"),
+                                     target=torch.tensor([runnerup], device="cuda"))
+                if pgd_success:
+                    break
+                    
             if pgd_success:
+                print("pgd succeed image {}, label {}, against label {}".format(i, label, runnerup))
                 continue
+
             pgd_acc += 1
             # continue
 

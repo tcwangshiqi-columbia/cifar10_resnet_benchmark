@@ -151,7 +151,7 @@ if __name__ == '__main__':
         epsilons = [eval(eps) for eps in args.epsilons.split(" ")]
     except ValueError:
         msg = "Error, usage: $python generate_properties --num_images <int> --random <bool> --epsilons <str> \n"
-        msg += "Example: $python generate_properties --num_images 25 --random True --epsilons '0.03 0.05'"
+        msg += "Example: $python generate_properties --num_images 25 --random True --epsilons '2/255'"
         raise ValueError(msg)
 
     result_dir = "./vnnlib_properties"
@@ -159,7 +159,7 @@ if __name__ == '__main__':
     if not os.path.isdir(result_dir):
         os.mkdir(result_dir)
 
-    if args.seed is not None:
+    if args.random and args.seed is not None:
         # we use random seed 0 for deterministic testing
         torch.random.manual_seed(args.seed)
 
