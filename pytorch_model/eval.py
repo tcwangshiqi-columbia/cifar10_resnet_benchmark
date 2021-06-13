@@ -5,7 +5,7 @@ import torchvision.datasets as dset
 import torchvision.transforms as trans
 from torch.utils.data import DataLoader
 from torch.utils.data import sampler
-from resnet import resnet2b, resnet4b
+from resnet import resnet2b, resnet4b, resnet4b_wide
 
 cifar10_mean = (0.4914, 0.4822, 0.4465)  # np.mean(train_set.train_data, axis=(0,1,2))/255
 cifar10_std = (0.2471, 0.2435, 0.2616)  # np.std(train_set.train_data, axis=(0,1,2))/255
@@ -73,6 +73,7 @@ def main():
     images, labels = load_data(num_imgs=num_imgs, random=False)
     print("ResNet-2B clean acc: {} out of {}".format(clean_acc("resnet2b", images, labels), num_imgs))
     print("ResNet-4B clean acc: {} out of {}".format(clean_acc("resnet4b", images, labels), num_imgs))
+    print("ResNet-4B-Wide clean acc: {} out of {}".format(clean_acc("resnet4b_wide", images, labels), num_imgs))
 
 if __name__ == "__main__":
     main()
