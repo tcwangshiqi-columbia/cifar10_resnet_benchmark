@@ -101,7 +101,7 @@ class ResNet5(nn.Module):
             out = out.view(out.size(0), -1)
             out = self.linear(out)
         elif self.last_layer == "dense":
-            out = out.view(out.size(0), -1)
+            out = torch.flatten(out, 1)
             out = F.relu(self.linear1(out))
             out = self.linear2(out)
         return out
@@ -147,7 +147,7 @@ class ResNet9(nn.Module):
             out = out.view(out.size(0), -1)
             out = self.linear(out)
         elif self.last_layer == "dense":
-            out = out.view(out.size(0), -1)
+            out = torch.flatten(out, 1)
             out = F.relu(self.linear1(out))
             out = self.linear2(out)
         return out
