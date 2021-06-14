@@ -47,15 +47,15 @@ preprocessing, channel order etc).
 
 **Data Selection**: We propose to randomly select 100 images from the test set
 which are classified correctly and cannot be attacked by a 50-step targeted PGD
-attack with 5 random restarts.  For each image, we specify the runner up label
-(the class with second largest logit) as the target for verification, and
-verify the property that the logit of runner up label is not larger than that
-of the groundtruth label within L_\infty perturbation `eps=2/255` on input. See
-instructions below for generating test images with a script, and some example
+attack with 5 random restarts.  For each image, we specify the property that the groundtruth label
+is always larger than all the other labels within L_\infty perturbation `eps=2/255` 
+on input for resnet2b and `eps=1/255` for resnet4b. 
+
+See instructions below for generating test images with a script, and some example
 properties are in the `vnnlib_properties_pgd_filtered` folder.
 
 To keep the sum of all the timeouts less than 6 hours, the suggested
-per-example timeout is 6 minutes per example (assuming only a fraction of all
+per-example timeout is 5 minutes per example (assuming only a fraction of all
 examples time out).
 
 
