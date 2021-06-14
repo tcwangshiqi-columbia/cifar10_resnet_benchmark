@@ -157,12 +157,8 @@ def resnet2b():
     return ResNet5(BasicBlock, num_blocks=2, in_planes=8, bn=False, last_layer="dense")
 
 def resnet4b():
-    return ResNet9(BasicBlock, num_blocks=2, in_planes=8, bn=False, last_layer="dense")
-
-def resnet4b_wide():
     return ResNet9(BasicBlock, num_blocks=2, in_planes=16, bn=False, last_layer="dense")
 
 if __name__ == '__main__':
     print('ResNet-2B:\n', resnet2b())
     print('ResNet-4B:\n', resnet4b())
-    print('ResNet-4B-Wide:\n', resnet4b_wide())

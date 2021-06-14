@@ -28,10 +28,10 @@ compared to most models used in the complete NN verification literature. The
 networks are trained using adversarial training with L_\infty perturbation
 epsilon (2/255). We report basic model performance numbers below:
 
-| Model      | Clean acc. | PGD acc. | CROWN/DeepPoly verified acc. |
-|------------|------------|----------|------------------------------|
-| ResNet-2B  |    69.25%  |  56.67%  |   26.88%                     |
-| ResNet-4B  |    67.21%  |  55.25%  |    8.81%                     |
+| Model      | # ReLUs | Clean acc. | PGD acc.(eps8/eps2) | CROWN/DeepPoly verified acc. |
+|------------|---------|------------|---------------------|------------------------------|
+| ResNet-2B  |   6244  |    69.25%  |    56.67%/63.15%    |   26.88%                     |
+| ResNet-4B  |  14436  |    77.20%  |    62.92%/70.41%    |    0.24%                     |
 
 Since the models are trained using adversarial training, it also poses a
 challenge for many verifiers - the CROWN/DeepPoly verified accuracy (as a
@@ -67,21 +67,10 @@ are also robust against targeted pgd attacks, please run:
 ```bash
 cd pytorch_model
 python generate_properties_pgd.py --model resnet2b --num_images 100 --random True --epsilons '2/255'
-python generate_properties_pgd.py --model resnet4b --num_images 100 --random True --epsilons '2/255'
+python generate_properties_pgd.py --model resnet4b --num_images 100 --random True --epsilons '1/255'
 ```
-
-To generate the properties from 100 random images against all 9 other target
-labels (i.e., the property is that the true label is larger than *all* other 9
-labels under perturbation), please run:
-
-```bash
-python generate_properties.py --num_images 100 --random True --epsilons '2/255'
-```
-This setting is useful for computing a "verified accuracy" given a dataset.
-
 
 To create the instance csv file for properties:
 ```bash
-python create_instance.py resnet_2b
-python create_instance.py resnet_4b
+python create_instance.py
 ```
