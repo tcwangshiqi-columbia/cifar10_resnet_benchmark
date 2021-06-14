@@ -7,7 +7,7 @@ import torchvision.datasets as dset
 import torchvision.transforms as trans
 from torch.utils.data import DataLoader
 from torch.utils.data import sampler
-from resnet import resnet2b, resnet4b, resnet4b_wide
+from resnet import resnet2b, resnet4b
 from eval import normalize
 import numpy as np
 import torch.nn.functional as F
@@ -195,7 +195,7 @@ def save_vnnlib(input_bounds: torch.Tensor, label: int, runnerup: int, spec_path
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model', type=str, default="resnet2b", choices=["resnet2b", "resnet4b", "resnet4b_wide"])
+    parser.add_argument('--model', type=str, default="resnet2b", choices=["resnet2b", "resnet4b"])
     parser.add_argument('--num_images', type=int, default=25)
     parser.add_argument('--random', type=bool, default=False)
     parser.add_argument('--seed', type=int, default=None)
