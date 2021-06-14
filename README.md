@@ -28,7 +28,7 @@ epsilon (2/255). We report basic model performance numbers below:
 
 | Model      | # ReLUs | Clean acc. |  PGD acc. <br> ε=2/255  |  PGD acc. <br> ε=1/255 | CROWN/DeepPoly <br> verified acc. <br> ε=2/255 | CROWN/DeepPoly <br> verified acc. <br> ε=1/255 |
 |------------|---------|------------|-----------------|----------------|-----------------------------------|-----------------------------------|
-| ResNet-2B  |   6244  |    69.25%  |      56.67%     |      63.15%    |   26.88%                          |   ??.??%                          |
+| ResNet-2B  |   6244  |    69.25%  |      56.67%     |      63.15%    |   26.88%                          |   57.16%                          |
 | ResNet-4B  |  14436  |    77.20%  |      62.92%     |      70.41%    |    0.24%                          |   23.28%                          |
 
 Since the models are trained using adversarial training, it also poses a
