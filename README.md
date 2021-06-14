@@ -28,7 +28,7 @@ compared to most models used in the complete NN verification literature. The
 networks are trained using adversarial training with L_\infty perturbation
 epsilon (2/255). We report basic model performance numbers below:
 
-| Model      | # ReLUs | Clean acc. | PGD acc.(eps8/eps2) | CROWN/DeepPoly verified acc. |
+| Model      | # ReLUs | Clean acc. | PGD acc.(eps2/eps1) | CROWN/DeepPoly verified acc. |
 |------------|---------|------------|---------------------|------------------------------|
 | ResNet-2B  |   6244  |    69.25%  |    56.67%/63.15%    |   26.88%                     |
 | ResNet-4B  |  14436  |    77.20%  |    62.92%/70.41%    |    0.24%                     |
