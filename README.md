@@ -66,11 +66,5 @@ are also robust against targeted pgd attacks, please run:
 
 ```bash
 cd pytorch_model
-python generate_properties_pgd.py --model resnet2b --num_images 100 --random True --epsilons '2/255'
-python generate_properties_pgd.py --model resnet4b --num_images 100 --random True --epsilons '1/255'
-```
-
-To create the instance csv file for properties:
-```bash
-python create_instance.py
+python generate_properties_pgd.py
 ```

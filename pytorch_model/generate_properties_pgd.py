@@ -1,6 +1,7 @@
 
 import os
 import argparse
+import csv
 
 import torch
 import torchvision.datasets as dset
@@ -191,26 +192,35 @@ def save_vnnlib(input_bounds: torch.Tensor, label: int, runnerup: int, spec_path
                 f.write(f"    (and (>= Y_{i} Y_{label}))\n")
         f.write("))\n")
 
+def create_csv():
+    name = ["model_name", "property_name", "timeout"]
+    instance_list = []
 
-if __name__ == '__main__':
+    # 48 properties for resnet2b
+    model_name = "resnet_2b"
+    assert os.path.exists(f"../onnx/{model_name}.onnx")
+    assert os.path.exists("../vnnlib_properties_pgd_filtered/")
+    for i in range(48):
+        instance_list.append([f"onnx/{model_name}.onnx", f"vnnlib_properties_pgd_filtered/resnet2b_pgd_filtered/prop_{i}_eps_0.008.vnnlib", "300"])
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--model', type=str, default="resnet2b", choices=["resnet2b", "resnet4b"])
-    parser.add_argument('--num_images', type=int, default=25)
-    parser.add_argument('--random', type=bool, default=False)
-    parser.add_argument('--seed', type=int, default=None)
-    parser.add_argument('--epsilons', type=str, default="2/255")
-    args = parser.parse_args()
+    # 24 properties for resnet2b
+    model_name = "resnet_4b"
+    assert os.path.exists(f"../onnx/{model_name}.onnx")
+    for i in range(24):
+        instance_list.append([f"onnx/{model_name}.onnx", f"vnnlib_properties_pgd_filtered/resnet4b_pgd_filtered/prop_{i}_eps_0.004.vnnlib", "300"])
 
-    try:
-        num_imgs = args.num_images
-        random = args.random
-        print("randomness:", args.random, "epsilons:", args.epsilons, "num_images:", args.num_images)
-        epsilons = [eval(eps) for eps in args.epsilons.split(" ")]
-    except ValueError:
-        msg = "Error, usage: $python generate_properties --num_images <int> --random <bool> --epsilons <str> \n"
-        msg += "Example: $python generate_properties_pgd.py --num_images 100 --random True --epsilons '2/255' --seed 0"
-        raise ValueError(msg)
+    with open('../instance.csv', 'w') as f:
+        write = csv.writer(f)
+        # write.writerow(fields)
+        write.writerows(instance_list)
+
+
+def create_vnnlib(args):
+    num_imgs = args.num_images
+    random = args.random
+    print(f"===== model: {args.model} epsilons: {args.epsilons} total images: {args.num_images} =====")
+    print("randomness:", args.random, "seed:", args.seed)
+    epsilons = [eval(eps) for eps in args.epsilons.split(" ")]
 
     result_dir = "../vnnlib_properties_pgd_filtered/"
     if not os.path.isdir(result_dir):
@@ -294,3 +304,31 @@ if __name__ == '__main__':
             cnt += 1
 
     print("acc:", acc, "pgd_acc:", pgd_acc, "out of", i, "samples")
+
+
+
+if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--model', type=str, default="resnet2b", choices=["resnet2b", "resnet4b"])
+    parser.add_argument('--num_images', type=int, default=50)
+    parser.add_argument('--random', type=bool, default=True)
+    parser.add_argument('--seed', type=int, default=None)
+    parser.add_argument('--epsilons', type=str, default="2/255")
+    args = parser.parse_args()
+
+    # Example: $python generate_properties_pgd.py --num_images 100 --random True --epsilons '2/255' --seed 0
+
+    args.model = "resnet2b"
+    args.epsilons = "2/255"
+    args.num_images = 48
+    create_vnnlib(args)
+
+    args.model = "resnet4b"
+    args.epsilons = "1/255"
+    args.num_images = 24
+    create_vnnlib(args)
+
+    create_csv()
+
+
