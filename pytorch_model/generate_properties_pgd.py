@@ -1,70 +1,31 @@
+############################################################
+#    CIFAR10-ResNet benchmark (for VNN Comp 2021)          #
+#                                                          #
+# Copyright (C) 2021  Shiqi Wang (sw3215@columbia.edu)     #
+# Copyright (C) 2021  Huan Zhang (huan@huan-zhang.com)     #
+# Copyright (C) 2021  Kaidi Xu (xu.kaid@northeastern.edu)  #
+#                                                          #
+# This program is licenced under the BSD 2-Clause License  #
+############################################################
 
 import os
 import argparse
 import csv
+import random
 
+import numpy as np
 import torch
+import torch.nn.functional as F
 import torchvision.datasets as dset
 import torchvision.transforms as trans
 from torch.utils.data import DataLoader
 from torch.utils.data import sampler
+
 from resnet import resnet2b, resnet4b
-from eval import normalize
-import numpy as np
-import torch.nn.functional as F
+from attack_pgd import attack_pgd
 
-
-def attack_pgd(model, X, y, epsilon, alpha=0.5/255, attack_iters=50, restarts=5, target=None, upper_limit=None, lower_limit=None):
-    # batch = 1, target pgd attack
-    def clamp(X, lower_limit, upper_limit):
-        return torch.max(torch.min(X, upper_limit), lower_limit)
-
-    model = model.cuda()
-    epsilon = epsilon.cuda()
-    X = X.cuda()
-    max_loss = torch.zeros(y.shape[0]).cuda()-100.
-    max_delta = torch.zeros_like(X).cuda()
-    for _ in range(restarts):
-        # alpha = np.random.uniform(alpha-0.2/255, alpha+0.2/255)
-        # delta = torch.zeros_like(X).float().cuda()
-        delta = (upper_limit - lower_limit) * torch.rand(size=X.shape, device='cuda') + lower_limit
-        delta = clamp(delta, lower_limit - X, upper_limit - X)
-        delta.requires_grad = True
-        for _ in range(attack_iters):
-            output = model(normalize(X + delta))
-            index = slice(None, None, None)
-            if target is None:
-                loss = F.cross_entropy(output, y)
-            else:
-                # target logit guided
-                loss = -F.cross_entropy(output, target)
-
-            loss.backward()
-
-            grad = delta.grad.detach()
-            d = delta[index, :, :, :]
-            g = grad[index, :, :, :]
-            x = X[index, :, :, :]
-            d = torch.max(torch.min(d + alpha * torch.sign(g), epsilon), -epsilon)
-
-            d = clamp(d, lower_limit - x, upper_limit - x)
-            delta.data[index, :, :, :] = d
-            delta.grad.zero_()
-            if target is None:
-                all_loss = F.cross_entropy(model(normalize(X + delta)), y, reduction='none')
-            else:
-                all_loss = -F.cross_entropy(model(normalize(X + delta)), target, reduction='none')
-        if all_loss[0] > max_loss[0]:
-            max_delta = delta.clone().detach()
-        max_loss = torch.max(max_loss, all_loss)
-
-    assert delta.abs().max()<=epsilon
-
-    output = model(normalize(torch.max(torch.min(X+max_delta, upper_limit), lower_limit)))
-    if output.argmax(1) == target:
-        return True  # attack success
-    else:
-        return False
+cifar10_mean = (0.4914, 0.4822, 0.4465)  # np.mean(train_set.train_data, axis=(0,1,2))/255
+cifar10_std = (0.2471, 0.2435, 0.2616)  # np.std(train_set.train_data, axis=(0,1,2))/255
 
 
 def load_data(data_dir: str = "./tmp", num_imgs: int = 25, random: bool = False) -> tuple:
@@ -124,8 +85,8 @@ def create_input_bounds(img: torch.Tensor, eps: float,
         in [..., 1].
     """
 
-    mean = torch.Tensor(mean).view(-1, 1, 1)
-    std = torch.Tensor(std).view(-1, 1, 1)
+    mean = torch.tensor(mean, device=img.device).view(-1, 1, 1)
+    std = torch.tensor(std, device=img.device).view(-1, 1, 1)
 
     bounds = torch.zeros((*img.shape, 2), dtype=torch.float32)
     bounds[..., 0] = (torch.clip((img - eps), 0, 1) - mean) / std
@@ -136,7 +97,7 @@ def create_input_bounds(img: torch.Tensor, eps: float,
 
 
 # noinspection PyShadowingNames
-def save_vnnlib(input_bounds: torch.Tensor, label: int, runnerup: int, spec_path: str, total_output_class: int = 10):
+def save_vnnlib(input_bounds: torch.Tensor, label: int, spec_path: str, total_output_class: int = 10):
 
     """
     Saves the classification property derived as vnn_lib format.
@@ -217,9 +178,8 @@ def create_csv():
 
 def create_vnnlib(args):
     num_imgs = args.num_images
-    random = args.random
     print(f"===== model: {args.model} epsilons: {args.epsilons} total images: {args.num_images} =====")
-    print("randomness:", args.random, "seed:", args.seed)
+    print("deterministic", args.deterministic, "seed:", args.seed)
     epsilons = [eval(eps) for eps in args.epsilons.split(" ")]
 
     result_dir = "../vnnlib_properties_pgd_filtered/"
@@ -234,15 +194,29 @@ def create_vnnlib(args):
     if not os.path.isdir(result_dir):
         os.mkdir(result_dir)
 
+    mu = torch.tensor(cifar10_mean).view(3,1,1)
+    std = torch.tensor(cifar10_std).view(3,1,1)
+
     model = eval(args.model)()
-    model.load_state_dict(torch.load(model_path)["state_dict"])
-    model = model.cuda()
+    model.load_state_dict(torch.load(model_path, map_location='cpu')["state_dict"])
+    if args.device == 'gpu':
+        torch.backends.cuda.matmul.allow_tf32 = False
+        torch.backends.cudnn.allow_tf32 = False
+        model = model.cuda()
+        mu = mu.cuda()
+        std = std.cuda()
+        
+    normalize = lambda X: (X - mu)/std
 
-    if args.random and args.seed is not None:
-        # we use random seed 0 for deterministic testing
+    if args.seed is not None:
+        if args.device == 'gpu':
+            torch.cuda.manual_seed_all(args.seed)
         torch.random.manual_seed(args.seed)
+        torch.manual_seed(args.seed)
+        random.seed(args.seed)
+        np.random.seed(args.seed)
 
-    images, labels = load_data(num_imgs=10000, random=random)
+    images, labels = load_data(num_imgs=10000, random=not args.deterministic)
 
     for eps in epsilons:
         acc, pgd_acc = 0, 0
@@ -251,56 +225,43 @@ def create_vnnlib(args):
             if cnt>=num_imgs:
                 break
 
+            # Load image and label.
             image, label = images[i], labels[i]
-            # adding pgd filter targeting for runner up label
-            output = model(normalize(image.unsqueeze(0).cuda()))
+            image = image.unsqueeze(0)
+            y = torch.tensor([label], dtype=torch.int64)
+            if args.device == 'gpu':
+                image = image.cuda()
+                y = y.cuda()
+
+            output = model(normalize(image))
+            # Skip incorrect examples. 
             if output.max(1)[1] != label: 
                 print("incorrect image {}".format(i))
                 continue
+
             acc += 1
-            # continue
-            output[0, label] = -np.inf
+            # Skip attacked examples.
+            perturbation = attack_pgd(model, X=image, y=y, epsilon=eps, alpha=eps / 2.0,
+                    attack_iters=100, num_restarts=5, upper_limit=1.0, lower_limit=0.0, normalize=normalize)
 
-            #########
-            # runnerup label targeted pgd
-            # runnerup = output.max(1)[1].item()
-            # print("image {}/{} label {} runnerup {}".format(cnt, i, label, runnerup))
+            attack_image = image + perturbation
+            assert (attack_image >= 0.).all()
+            assert (attack_image <= 1.).all()
+            assert perturbation.abs().max() <= eps
+            attack_output = model(normalize((image + perturbation))).squeeze(0)
+            attack_label = attack_output.argmax()
 
-            # pgd_success = attack_pgd(model, X=image.unsqueeze(0), y=torch.tensor([label], device="cuda"),
-            #                      epsilon=torch.tensor(eps, device="cuda"), upper_limit=torch.tensor(1., device="cuda"), 
-            #                      lower_limit=torch.tensor(0., device="cuda"),
-            #                      target=torch.tensor([runnerup], device="cuda"))
-            # if pgd_success:
-            #     print("pgd succeed {}".format(i))
-            #     continue
-
-            #########
-            # All label targeted pgd
-            pgd_success = False
-            for runnerup in range(10):
-                if runnerup == label:
-                    continue
-                print("image {}/{} label {} target label {}".format(cnt, i, label, runnerup))
-
-                pgd_success = attack_pgd(model, X=image.unsqueeze(0), y=torch.tensor([label], device="cuda"),
-                                     epsilon=torch.tensor(eps, device="cuda"), upper_limit=torch.tensor(1., device="cuda"), 
-                                     lower_limit=torch.tensor(0., device="cuda"),
-                                     target=torch.tensor([runnerup], device="cuda"))
-                if pgd_success:
-                    break
-                    
-            if pgd_success:
-                print("pgd succeed image {}, label {}, against label {}".format(i, label, runnerup))
+            if attack_label != label:
+                print("pgd succeed image {}, label {}, against label {}".format(i, label, attack_label))
                 continue
 
             pgd_acc += 1
-            # continue
+
+            print("scanned images: {}, selected: {}, label {}".format(i, cnt, label))
 
             input_bounds = create_input_bounds(image, eps)
-
             spec_path = os.path.join(result_dir, f"prop_{cnt}_eps_{eps:.3f}.vnnlib")
-
-            save_vnnlib(input_bounds, label, runnerup, spec_path)
+            save_vnnlib(input_bounds, label, spec_path)
             cnt += 1
 
     print("acc:", acc, "pgd_acc:", pgd_acc, "out of", i, "samples")
@@ -310,11 +271,12 @@ def create_vnnlib(args):
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model', type=str, default="resnet2b", choices=["resnet2b", "resnet4b"])
-    parser.add_argument('--num_images', type=int, default=50)
-    parser.add_argument('--random', type=bool, default=True)
-    parser.add_argument('--seed', type=int, default=None)
-    parser.add_argument('--epsilons', type=str, default="2/255")
+    # parser.add_argument('--model', type=str, default="resnet2b", choices=["resnet2b", "resnet4b"])
+    # parser.add_argument('--num_images', type=int, default=50)
+    parser.add_argument('--deterministic', action='store_true', help='Do not generate random examples; use dataset order instead.')
+    parser.add_argument('--seed', type=int, default=0, help='random seed.')
+    parser.add_argument('--device', choices=['cpu', 'gpu'], default='cpu', help='Choose device to generate adversarial examples.')
+    # parser.add_argument('--epsilons', type=str, default="2/255")
     args = parser.parse_args()
 
     # Example: $python generate_properties_pgd.py --num_images 100 --random True --epsilons '2/255' --seed 0
